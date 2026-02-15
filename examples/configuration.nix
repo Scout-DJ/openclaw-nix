@@ -26,9 +26,13 @@
     # Tool security — allowlist mode (default, recommended)
     toolSecurity = "allowlist";
     toolAllowlist = [
-      "read" "write" "edit"
-      "web_search" "web_fetch"
-      "message" "tts"
+      "read"
+      "write"
+      "edit"
+      "web_search"
+      "web_fetch"
+      "message"
+      "tts"
       # Uncomment to enable (understand the risks):
       # "exec"
       # "browser"
@@ -37,7 +41,7 @@
 
     # Model provider
     modelProvider = "anthropic";
-    modelApiKeyFile = "/run/secrets/anthropic-api-key";  # Use agenix/sops
+    modelApiKeyFile = "/run/secrets/anthropic-api-key"; # Use agenix/sops
 
     # Telegram bot (optional)
     telegram = {
@@ -54,7 +58,7 @@
     # Auto-updates (optional)
     autoUpdate = {
       enable = true;
-      schedule = "Sun *-*-* 03:00:00";  # Sunday 3 AM
+      schedule = "Sun *-*-* 03:00:00"; # Sunday 3 AM
     };
   };
 
