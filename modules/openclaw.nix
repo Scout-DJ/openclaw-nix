@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.openclaw;
@@ -16,7 +21,8 @@ let
       security = cfg.toolSecurity;
       allowlist = cfg.toolAllowlist;
     };
-  } // cfg.extraGatewayConfig;
+  }
+  // cfg.extraGatewayConfig;
 
   gatewayConfigFile = settingsFormat.generate "openclaw-gateway.json" gatewayConfig;
 in
@@ -26,27 +32,7 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.openclaw or (pkgs.stdenv.mkDerivation rec {
-        pname = "openclaw";
-        version = cfg.version;
-        nativeBuildInputs = with pkgs; [ nodejs_22 cacert ];
-        buildInputs = with pkgs; [ nodejs_22 ];
-        dontUnpack = true;
-        buildPhase = ''
-          export HOME=$TMPDIR
-          export npm_config_cache=$TMPDIR/npm-cache
-          mkdir -p $npm_config_cache
-          npm install --global --prefix=$out openclaw@${version}
-        '';
-        installPhase = ''
-          mkdir -p $out/bin
-          for f in $out/lib/node_modules/.bin/*; do
-            name=$(basename $f)
-            [ ! -e "$out/bin/$name" ] && ln -sf "$f" "$out/bin/$name"
-          done
-        '';
-        meta.description = "OpenClaw agent infrastructure";
-      });
+      default = pkgs.openclaw or (pkgs.callPackage ../package.nix { inherit (cfg) version; });
       defaultText = lib.literalExpression "pkgs.openclaw (auto-built from npm if not in nixpkgs)";
       description = "The OpenClaw package to use. Auto-fetched from npm if not provided.";
     };
@@ -84,7 +70,10 @@ in
 
     # --- Tool Security ---
     toolSecurity = lib.mkOption {
-      type = lib.types.enum [ "deny" "allowlist" ];
+      type = lib.types.enum [
+        "deny"
+        "allowlist"
+      ];
       default = "allowlist";
       description = ''
         Tool execution security mode.
@@ -202,7 +191,7 @@ in
         StateDirectory = "openclaw";
 
         # ── Hardening ──
-        DynamicUser = false;  # We use a dedicated user below
+        DynamicUser = false; # We use a dedicated user below
         User = "openclaw";
         Group = "openclaw";
         NoNewPrivileges = true;
@@ -216,12 +205,16 @@ in
         ProtectControlGroups = true;
         ProtectClock = true;
         ProtectHostname = true;
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         LockPersonality = true;
-        MemoryDenyWriteExecute = false;  # Node.js needs JIT
+        MemoryDenyWriteExecute = false; # Node.js needs JIT
         ReadWritePaths = [ cfg.dataDir ];
         SystemCallArchitectures = "native";
         SystemCallFilter = [
@@ -281,7 +274,10 @@ in
 
     # ── Firewall ──
     networking.firewall = lib.mkIf cfg.openFirewall {
-      allowedTCPPorts = [ 443 80 ];  # 80 for ACME redirect
+      allowedTCPPorts = [
+        443
+        80
+      ]; # 80 for ACME redirect
     };
 
     # ── Fail2ban ──
@@ -299,7 +295,9 @@ in
         Type = "oneshot";
         ExecStart = "${pkgs.writeShellScript "openclaw-update" ''
           echo "Checking for OpenClaw updates..."
-          ${pkgs.nixos-rebuild or pkgs.writeShellScript "noop" "echo 'nixos-rebuild not available'"}/bin/nixos-rebuild switch --flake /etc/nixos#$(hostname) --upgrade 2>&1 || true
+          ${
+            pkgs.nixos-rebuild or pkgs.writeShellScript "noop" "echo 'nixos-rebuild not available'"
+          }/bin/nixos-rebuild switch --flake /etc/nixos#$(hostname) --upgrade 2>&1 || true
         ''}";
       };
     };
